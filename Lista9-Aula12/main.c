@@ -25,8 +25,11 @@ d) Compare e exiba qual é o algoritmo mais e menos performático.
 
 #define MAX 70000
 #include <stdio.h>
+#include <time.h>
 
+unsigned long long listaOriginal[MAX];
 unsigned long long lista[MAX];
+double tempos[7] = {0};
 int quantidade = 0;
 
 void carregar() {
@@ -39,7 +42,7 @@ void carregar() {
         return;
     }
 
-    while (i < MAX && fscanf(arq, "%llu", &lista[i]) == 1) {
+    while (i < MAX && fscanf(arq, "%llu", &listaOriginal[i]) == 1) {
         i++;
     }
 
@@ -49,12 +52,21 @@ void carregar() {
     printf("Total encontrado: %d\n", quantidade);
 }
 
+void resetarLista(){
+
+    // copia a lista original de volta pra lista de trabalho
+    for(int i = 0; i < quantidade; i++){
+        lista[i] = listaOriginal[i];
+    }
+}
+
 void exibirDados() {
     for (int i = 0; i < quantidade; i++) {
         printf("Posicao: [%d] - Codigo: %llu\n", i, lista[i]);
     }
 }
-void ordenarBubble(){
+
+void ordenarBubble(){ 
     int aux;
     for(int i = 0; i < quantidade - 1 ; i++){
         for(int j = 0; j < quantidade - 1 ; j ++){
@@ -128,61 +140,303 @@ void heapSort() {
         heapify(i, 0); 
     }
 }
+
+void ordenarInsertion(){
+    int auxiliar, j;
+    //Começa do 1 pq o 0 não tem ngm antes dele, esse daq percorre do segundo valor do vetor(1) ao ultimo
+    for(int i = 1; i < quantidade; i++){
+        j = i;
+        //se tiver alguem maior que ele, antes dele, nois troca eles de lugar
+        while(j> 0 && lista[j - 1] > lista[j]){
+            auxiliar = lista[j];
+            lista[j] = lista[j - 1];
+            lista[j - 1] = auxiliar;
+            j -= 1;
+        }
+    }
+}
+void merge(int inicio, int meio, int fim){
+    
+    int i = 0, j = 0, k = inicio;
+
+    int tamanhoEsq = meio - inicio + 1;
+    int tamanhoDireita = fim - meio;
+
+    unsigned long long esquerda[tamanhoEsq], direita[tamanhoDireita];
+
+    // Copia a parte da esquerda do vetor original
+    for (i = 0; i < tamanhoEsq; i++){
+        esquerda[i] = lista[inicio + i];
+    }
+
+    // Copia a parte da direita do vetor original
+    for (j = 0; j < tamanhoDireita; j++){
+        direita[j] = lista[meio + 1 + j];
+    }
+
+    // Reinicia os índices para começar a comparação
+    i = 0;
+    j = 0;
+
+    // Enquanto ainda tiver elementos nos dois lados
+    while (i < tamanhoEsq && j < tamanhoDireita) {
+
+        // Compara os dois valores atuais e pega o menor
+        if (esquerda[i] <= direita[j]) {
+            lista[k] = esquerda[i];
+            i++; // anda na esquerda
+        } else {
+            lista[k] = direita[j];
+            j++; // anda na direita
+        }
+
+        k++; // sempre anda no vetor principal
+    }
+
+    // Se sobrou coisa na esquerda, copia tudo
+    while (i < tamanhoEsq) {
+        lista[k] = esquerda[i];
+        i++;
+        k++;
+    }
+
+    // Se sobrou coisa na direita, copia tudo
+    while (j < tamanhoDireita) {
+        lista[k] = direita[j];
+        j++;
+        k++;
+    }
+}
+
+void mergeSort(int inicio, int fim){
+    if(inicio < fim){
+        int meio = (inicio + fim) / 2;
+
+        mergeSort(inicio, meio);       // divide lado esquerdo
+        mergeSort(meio + 1, fim);      // divide lado direito
+
+        merge(inicio, meio, fim);      // junta tudo ordenado
+    }
+}
+
+void ordenarShell(){
+    int j, auxiliar;
+    
+    // começa com um "pulo" grande e vai diminuindo
+    for(int gap = quantidade / 2; gap > 0; gap /= 2){
+
+        // percorre o vetor a partir do gap
+        for(int i = gap; i < quantidade; i++){
+
+            // guarda o valor atual
+            auxiliar = lista[i];
+
+            // compara com elementos anteriores, pulando de gap em gap
+            // e vai deslocando eles pra frente se forem maiores
+            for(j = i; j >= gap && auxiliar < lista[j - gap]; j -= gap){
+                lista[j] = lista[j - gap];
+            }
+
+            // coloca o valor na posição correta
+            lista[j] = auxiliar;
+        }
+    }
+}
+
+void ordenarSelection(){
+    
+    int menor, auxiliar;
+
+    for(int i = 0; i < quantidade -1; i++){
+        //salva o numero da vez
+        menor = i;
+        for(int j = i + 1; j < quantidade; j++){
+            //Se tiver alguem menor q ele
+            if(lista[j] < lista[menor]){
+                menor = j;
+            }
+        }
+        //Faz o troca troca
+        auxiliar = lista[i];
+        lista[i] = lista[menor];
+        lista[menor] = auxiliar;
+    }
+}
+
+void ordenarQuick(int inicio, int fim){
+   
+    // Caso base: se só tem 1 ou nenhum elemento, já está ordenado
+    if (inicio >= fim){
+        return;
+    }
+
+    int ponto_divisao, aux;
+    
+    // Escolhe o pivô (último elemento do vetor atual)
+    ponto_divisao = lista[fim];
+
+    // i marca a posição do "menor ou igual ao pivô"
+    int i = inicio - 1;
+
+    // Percorre do início até antes do pivô
+    for(int j = inicio; j < fim; j++){
+        
+        // Se o elemento for menor ou igual ao pivô
+        if(lista[j] <= ponto_divisao){
+            i++;
+
+            // troca para levar ele para o lado esquerdo
+            aux = lista[i];
+            lista[i] = lista[j];
+            lista[j] = aux;
+        }
+    }
+
+    // Coloca o pivô na posição correta dele
+    aux = lista[i + 1];
+    lista[i + 1] = lista[fim];
+    lista[fim] = aux;
+
+    // posição final do pivô
+    int posicao = i + 1;
+    
+    // ordena a parte da esquerda (menores que o pivô)
+    ordenarQuick(inicio, posicao - 1);
+
+    // ordena a parte da direita (maiores que o pivô)
+    ordenarQuick(posicao + 1, fim);
+}
+void avaliarMelhorPior(){
+
+    int menor = 0;
+    int maior = 0;
+
+    // 0 = Bubble
+    // 1 = Heap
+    // 2 = Insertion
+    // 3 = Merge
+    // 4 = Selection
+    // 5 = Shell
+    // 6 = Quick
+
+    for(int i = 1; i < 7; i++){
+
+        if(tempos[i] < tempos[menor]){
+            menor = i;
+        }
+
+        if(tempos[i] > tempos[maior]){
+            maior = i;
+        }
+    }
+
+    printf("\n--- RESULTADO FINAL ---\n");
+
+    printf("Menor tempo (melhor): algoritmo %d -> %f s\n", menor, tempos[menor]);
+    printf("Maior tempo (pior):   algoritmo %d -> %f s\n", maior, tempos[maior]);
+}
+
 void menu(){
     int opc = -1;
 
     do{
         printf("0. Carregar\n");
         printf("1. Exibir\n");
-        printf("2. Ordenar bubble\n");
-        printf("3. Ordenar Heap;\n");
-        printf("4. Ordenar Insertion;\n");
-        printf("5. Ordenar Merge;\n");
-        printf("6. Ordenar Selection;\n");
-        printf("7. Ordenar Shell;\n");
-        printf("8. Ordenar Quick;\n");
-        printf("9. Exibir tempos ordenação;\n");
-        printf("10. Avaliar melhor/pior ordenação;\n");
+        printf("2. Bubble\n");
+        printf("3. Heap\n");
+        printf("4. Insertion\n");
+        printf("5. Merge\n");
+        printf("6. Selection\n");
+        printf("7. Shell\n");
+        printf("8. Quick\n");
+        printf("9. Exibir tempos\n");
+        printf("10. Melhor/Pior\n");
         printf("19. Sair\n");
-        printf("OQue deseja fazer:\n");
-        
+        printf("O que deseja fazer: ");
+
         scanf("%d", &opc);
 
-
         if(opc == 0){
+            carregar();
+        }
 
+        else if(opc == 1){
+            resetarLista();
+            exibirDados();
         }
-        else if (opc == 1){
 
+        else if(opc == 2){
+            resetarLista();
+            clock_t inicio = clock();
+            ordenarBubble();
+            clock_t fim = clock();
+            tempos[0] = (double)(fim - inicio) / CLOCKS_PER_SEC;
         }
-        else if (opc == 2){
-            
+
+        else if(opc == 3){
+            resetarLista();
+            clock_t inicio = clock();
+            heapSort();
+            clock_t fim = clock();
+            tempos[1] = (double)(fim - inicio) / CLOCKS_PER_SEC;
         }
-        else if (opc == 3){
-            
+
+        else if(opc == 4){
+            resetarLista();
+            clock_t inicio = clock();
+            ordenarInsertion();
+            clock_t fim = clock();
+            tempos[2] = (double)(fim - inicio) / CLOCKS_PER_SEC;
         }
-        else if (opc == 4){
-            
+
+        else if(opc == 5){
+            resetarLista();
+            clock_t inicio = clock();
+            mergeSort(0, quantidade - 1); 
+            clock_t fim = clock();
+            tempos[3] = (double)(fim - inicio) / CLOCKS_PER_SEC;
         }
-        else if (opc == 5){
-            
+
+        else if(opc == 6){
+            resetarLista();
+            clock_t inicio = clock();
+            ordenarSelection();
+            clock_t fim = clock();
+            tempos[4] = (double)(fim - inicio) / CLOCKS_PER_SEC;
         }
-        else if (opc == 6){    
+
+        else if(opc == 7){
+            resetarLista();
+            clock_t inicio = clock();
+            ordenarShell();
+            clock_t fim = clock();
+            tempos[5] = (double)(fim - inicio) / CLOCKS_PER_SEC;
         }
-        else if (opc == 7){
-            
+
+        else if(opc == 8){
+            resetarLista();
+            clock_t inicio = clock();
+            ordenarQuick(0, quantidade - 1);
+            clock_t fim = clock();
+            tempos[6] = (double)(fim - inicio) / CLOCKS_PER_SEC;
         }
-        else if (opc == 8){
-            
+        else if(opc == 9){
+            printf("\n--- TEMPOS ---\n");
+            printf("Bubble:     %f\n", tempos[0]);
+            printf("Heap:       %f\n", tempos[1]);
+            printf("Insertion:  %f\n", tempos[2]);
+            printf("Merge:      %f\n", tempos[3]);
+            printf("Selection:  %f\n", tempos[4]);
+            printf("Shell:      %f\n", tempos[5]);
+            printf("Quick:      %f\n", tempos[6]);
         }
-        else if (opc == 9){
-            
-        }
-        else if (opc == 10){
-            
+
+        else if(opc == 10){
+        avaliarMelhorPior();
         }
     }while(opc != 19);
 }
+
 int main(){
     menu();
     return 0;
